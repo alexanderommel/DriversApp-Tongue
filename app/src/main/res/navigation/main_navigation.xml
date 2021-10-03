@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_navigation"
+    android:theme="@style/Theme.TongueDrivers.NavigationDrawer"
+    app:startDestination="@id/shippingFragment">
+
+    <fragment
+        android:id="@+id/shippingFragment"
+        android:name="com.example.tongue_drivers.fragments.ShippingFragment"
+        android:label="fragment_shipping"
+        tools:layout="@layout/fragment_shipping" />
+</navigation>
