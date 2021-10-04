@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Tongue-Drivers</string>
+    <string name="Direction">Dirección:</string>
+    <string name="Ship_at">Entregar en:</string>
+    <string name="Accept">Aceptar</string>
+    <string name="Reject">Rechazar</string>
+    <string name="Connected">Conectado</string>
+    <string name="Disconnected">Desconectado</string>
 </resources>

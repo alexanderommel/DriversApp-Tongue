@@ -1,17 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+<com.sothree.slidinguppanel.SlidingUpPanelLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/slidingUp"
+    android:gravity="bottom"
+    app:umanoOverlay="true"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".fragments.ShippingFragment">
 
-    <TextView
-        android:id="@+id/yoww"
+
+    <androidx.appcompat.widget.LinearLayoutCompat
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:text="Main"
+        android:background="@color/white"
+        android:orientation="vertical"
+        android:layout_height="match_parent">
+
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:orientation="vertical"
+            android:layout_height="wrap_content">
+
+            <include
+                layout="@layout/shipping_profile_bar"
+                />
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:background="@color/tongueGrey"
+                />
+
+            <include
+                layout="@layout/shipping_location_bar"
+                />
+
+            <androidx.appcompat.widget.LinearLayoutCompat
+                android:layout_width="match_parent"
+                android:layout_height="0.5dp"
+                android:background="@color/tongueGrey"
+                />
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+
+        <fragment
+            android:id="@+id/fragment_shipping_google"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:name="com.example.tongue_drivers.fragments.ShippingMapsFragment"
+            />
+
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+    <include
+        layout="@layout/shipping_sliding_content"
         />
 
-</androidx.appcompat.widget.LinearLayoutCompat>
+
+
+</com.sothree.slidinguppanel.SlidingUpPanelLayout>

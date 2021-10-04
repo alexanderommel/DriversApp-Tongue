@@ -7,4 +7,11 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="tongueOrange">#FB6D3B</color>
+    <color name="tongueRed">#FF6D7A</color>
+    <color name="tongueLightGrey">#f2f2f2</color>
+    <color name="tongueGreen">#06C167</color>
+    <color name="transparent">#00FFFFFF</color>
+    <color name="tongueGrey">#E2E2E2</color>
+    <color name="tongueBlue">#5183F3</color>
 </resources>
