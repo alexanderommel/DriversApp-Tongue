@@ -6,4 +6,11 @@
     <string name="Reject">Rechazar</string>
     <string name="Connected">Conectado</string>
     <string name="Disconnected">Desconectado</string>
+    <string name="Login">Login</string>
+    <string name="CreateAccount">Crear cuenta</string>
+    <string name="SignInWithGoogle">Ingresar con Google</string>
+    <string name="SignInWithFacebook">Ingresar con Facebook</string>
+    <string name="Tongue">Tongue</string>
+    <string name="TongueDrivers">Tongue Drivers</string>
+    <string name="server_client_id">319232536194-754v9d4i0hpfugk92qe8o0g3am7qj5q3.apps.googleusercontent.com</string>
 </resources>

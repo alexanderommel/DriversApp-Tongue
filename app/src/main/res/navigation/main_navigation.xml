@@ -4,11 +4,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_navigation"
     android:theme="@style/Theme.TongueDrivers.NavigationDrawer"
-    app:startDestination="@id/shippingFragment">
+    app:startDestination="@id/loginFragment">
 
     <fragment
         android:id="@+id/shippingFragment"
         android:name="com.example.tongue_drivers.fragments.ShippingFragment"
         android:label="fragment_shipping"
         tools:layout="@layout/fragment_shipping" />
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.tongue_drivers.fragments.LoginFragment"
+        android:label="fragment_login"
+        tools:layout="@layout/fragment_login" />
 </navigation>
