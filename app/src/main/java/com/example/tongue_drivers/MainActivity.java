@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             Log.w(TAG,account.getEmail());
             Log.w(TAG,account.getIdToken());
+            Log.w(TAG,account.getId());
             // WHEN SIGN IN FINISHED, CHANGE THE FRAGMENT
         }catch (ApiException e){
             Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());

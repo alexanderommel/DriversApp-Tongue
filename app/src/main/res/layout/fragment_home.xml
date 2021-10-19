@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/tongueLightGrey"
+    android:layout_height="match_parent"
+    tools:context=".fragments.HomeFragment"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="match_parent"
+        android:background="@color/black"
+        android:layout_height="32dp"/>
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:orientation="vertical"
+        android:elevation="200dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <include
+            layout="@layout/home_bar"
+            />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="10dp"/>
+
+        <include
+            layout="@layout/home_summary"
+            />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="32dp"/>
+
+        <include
+            layout="@layout/home_profits"
+            />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="32dp"/>
+
+        <include
+            android:id="@+id/fragment_home_panel"
+            layout="@layout/home_panel"
+            />
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+
+
+
+    <androidx.cardview.widget.CardView
+        app:cardElevation="0dp"
+        android:background="@color/black"
+        android:backgroundTint="@color/black"
+        android:layout_alignParentTop="true"
+        android:layout_width="match_parent"
+        app:cardCornerRadius="32dp"
+        android:layout_height="200dp">
+
+    </androidx.cardview.widget.CardView>
+
+</RelativeLayout>
