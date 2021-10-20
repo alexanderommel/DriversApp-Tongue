@@ -57,6 +57,7 @@
     </RelativeLayout>
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/shipping_profile_home_button"
         android:layout_centerVertical="true"
         android:layout_width="32dp"
         android:layout_alignParentEnd="true"

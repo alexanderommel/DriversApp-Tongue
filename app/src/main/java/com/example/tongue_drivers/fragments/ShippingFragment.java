@@ -1,5 +1,6 @@
 package com.example.tongue_drivers.fragments;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,6 +18,7 @@ public class ShippingFragment extends Fragment {
 
     //Fields
     private FragmentShippingBinding binding;
+    private OnHomeButtonListener homeButtonListener;
 
     @Override
     public void onViewCreated(View view,Bundle savedInstanceState) {
@@ -27,13 +29,34 @@ public class ShippingFragment extends Fragment {
                              ViewGroup container, Bundle savedInstanceState){
 
         binding = FragmentShippingBinding.inflate(inflater, container, false);
+        binding.fragShippingProfileBar.shippingProfileHomeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                homeButtonListener.OnHomeButtonClicked(view);
+            }
+        });
         View root = binding.getRoot();
         return root;
+    }
+
+    @Override
+    public void onAttach(@NonNull @NotNull Context context) {
+        super.onAttach(context);
+        try {
+            homeButtonListener = (ShippingFragment.OnHomeButtonListener) context;
+        } catch (ClassCastException e){
+            throw new ClassCastException(context.toString()+ "must implement OnHomeButtonListener");
+        }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+
+    public interface OnHomeButtonListener{
+        public void OnHomeButtonClicked(View view);
     }
 }
