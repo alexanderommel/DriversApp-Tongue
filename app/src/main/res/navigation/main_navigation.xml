@@ -21,6 +21,8 @@
         android:label="fragment_login"
         tools:layout="@layout/fragment_login" >
         <action
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true"
             android:id="@+id/action_loginFragment_to_shippingFragment"
             app:destination="@id/shippingFragment" />
     </fragment>
@@ -30,7 +32,7 @@
         android:label="fragment_home"
         tools:layout="@layout/fragment_home" >
         <action
-            app:popUpTo="@+id/loginFragment"
+            app:popUpTo="@+id/shippingFragment"
             app:popUpToInclusive="true"
             android:id="@+id/action_homeFragment_to_loginFragment"
             app:destination="@id/loginFragment" />
@@ -41,12 +43,12 @@
         android:label="fragment_main"
         tools:layout="@layout/fragment_main" >
         <action
-            app:popUpTo="@+id/loginFragment"
+            app:popUpTo="@+id/mainFragment"
             app:popUpToInclusive="true"
             android:id="@+id/action_mainFragment_to_loginFragment"
             app:destination="@id/loginFragment" />
         <action
-            app:popUpTo="@+id/shippingFragment"
+            app:popUpTo="@+id/mainFragment"
             app:popUpToInclusive="true"
             android:id="@+id/action_mainFragment_to_shippingFragment"
             app:destination="@id/shippingFragment" />
