@@ -14,6 +14,14 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.tongue_drivers.databinding.ActivityMainBinding;
 import com.example.tongue_drivers.databinding.FragmentHomeBinding;
 import com.example.tongue_drivers.fragments.HomeFragment;
@@ -32,6 +40,11 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static android.content.ContentValues.TAG;
 
@@ -77,10 +90,21 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
         googleSignInClient.silentSignIn().addOnSuccessListener(this, new OnSuccessListener<GoogleSignInAccount>() {
             @Override
             public void onSuccess(GoogleSignInAccount googleSignInAccount) {
-                Log.w(TAG,"Successful Silent Sign In");
-                populateSuccessfulLoginData(googleSignInAccount);
-                Log.w(TAG,"Navigate from MainFragment to ShippingFragment");
-                navController.navigate(R.id.action_mainFragment_to_shippingFragment);
+                Log.w(TAG,"Silent Sign In");
+                //populateSuccessfulLoginData(googleSignInAccount);
+                Driver driver = new Driver();
+                driver.setId(googleSignInAccount.getId());
+                Log.w(TAG,"Sending IdToken to backend");
+                sendIdTokenToServer(googleSignInAccount.getIdToken(),driver);
+                if (driverViewModel!=null){
+                    homeBinding.setDriver(driverViewModel);
+                    Log.w(TAG,"Navigate from MainFragment to ShippingFragment");
+                    navController.navigate(R.id.action_mainFragment_to_shippingFragment);
+                }else {
+                    googleSignInClient.signOut();
+                    navController.navigate(R.id.action_mainFragment_to_loginFragment);
+                }
+
                 //navController.popBackStack();
             }
         }).addOnFailureListener(this, new OnFailureListener() {
@@ -111,6 +135,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             Boolean handled = handleSignInResult(task);
             if (handled){
+                homeBinding.setDriver(driverViewModel);
                 navController.navigate(R.id.action_loginFragment_to_shippingFragment);
             }
         }
@@ -124,11 +149,18 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
     private Boolean handleSignInResult(Task<GoogleSignInAccount> completedTask) {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+
             Log.w(TAG,account.getEmail());
             Log.w(TAG,account.getIdToken());
             Log.w(TAG,account.getId());
-            populateSuccessfulLoginData(account);
-            return Boolean.TRUE;
+
+            Driver driver = new Driver();
+            driver.setId(account.getId());
+            sendIdTokenToServer(account.getIdToken(),driver);
+
+
+            //populateSuccessfulLoginData(account);
+            return driverViewModel.getDriver()!=null;
             // WHEN SIGN IN FINISHED, CHANGE THE FRAGMENT
         }catch (ApiException e){
             Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
@@ -136,15 +168,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
         return Boolean.FALSE;
     }
 
-    private void populateSuccessfulLoginData(GoogleSignInAccount googleSignInAccount){
-        Driver driver = new Driver();
-        driver.setId(googleSignInAccount.getId());
-        driver.setName(googleSignInAccount.getDisplayName());
-        driver.setEmail(googleSignInAccount.getEmail());
-        driverViewModel.setDriver(driver);
-        homeBinding.setDriver(driverViewModel);
-        Log.w(TAG,"Driver: "+homeBinding.getDriver().getDriver().getName());
-    }
+
 
     @Override
     public void onLogoutClicked(View view) {
@@ -160,9 +184,50 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                 .addOnCompleteListener(this, new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull @NotNull Task<Void> task) {
+                        driverViewModel=null;
+                        homeBinding.setDriver(null);
                         navController.navigate(R.id.action_homeFragment_to_loginFragment);
                     }
                 });
+    }
+
+    private void sendIdTokenToServer(String idToken,Driver driver){
+        Boolean solved = Boolean.FALSE;
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "http://192.168.101.12:8081/drivers/login";
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, response -> {
+            try {
+                Log.w(TAG,"Parsing response");
+                JSONObject jsonObject = new JSONObject(response);
+                JSONObject jsonResponse = jsonObject.getJSONObject("response");
+                driver.setName(jsonResponse.getString("name"));
+                driver.setEmail(jsonResponse.getString("email"));
+                driver.setCountryCode(jsonResponse.getString("countryCode"));
+                driver.setFirstName(jsonResponse.getString("firstName"));
+                driver.setLastName(jsonResponse.getString("lastName"));
+                driver.setIdentification(jsonResponse.getString("identification"));
+                driver.setPhoneNumber(jsonResponse.getString("phoneNumber"));
+                driver.setRating(jsonResponse.getDouble("rating"));
+                driver.setImageUrl(jsonResponse.getString("imageUrl"));
+                Log.w(TAG,"Successfully driver attaching to view model");
+                driverViewModel.setDriver(driver);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                Log.w(TAG,"Json parsing failed");
+            }
+        }, error -> {
+            Log.w(TAG,"String request failed");
+            Log.w(TAG,"Error "+error.networkResponse.statusCode);
+        }){
+            @Override
+            protected Map<String, String> getParams(){
+                Map<String,String> params = new HashMap<>();
+                params.put("idToken",idToken);
+                return params;
+            }
+        };
+
+        queue.add(stringRequest);
     }
 
     @Override
