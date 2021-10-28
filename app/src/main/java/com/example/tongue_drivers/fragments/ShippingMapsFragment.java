@@ -4,7 +4,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +22,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 public class ShippingMapsFragment extends Fragment {
 
+    //Fields
+    public GoogleMap googleMap1;
+
     private OnMapReadyCallback callback = new OnMapReadyCallback() {
 
         /**
@@ -33,6 +38,7 @@ public class ShippingMapsFragment extends Fragment {
          */
         @Override
         public void onMapReady(GoogleMap googleMap) {
+            googleMap1=googleMap;
             LatLng origin = new LatLng(-0.2086989341940772, -78.4889380995957);
             LatLng restaurant = new LatLng(-0.17674340625709623, -78.47893045337151);
             googleMap.addMarker(new MarkerOptions().position(origin).title("Origin")).
@@ -57,5 +63,9 @@ public class ShippingMapsFragment extends Fragment {
         if (mapFragment != null) {
             mapFragment.getMapAsync(callback);
         }
+    }
+
+    public void alignCameraOnNextPosition(Location location){
+        Log.w("MAPS","Rotating camera");
     }
 }

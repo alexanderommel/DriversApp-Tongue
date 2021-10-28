@@ -1,9 +1,12 @@
 package com.example.tongue_drivers.fragments;
 
+import android.Manifest;
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,15 +15,33 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.tongue_drivers.R;
 import com.example.tongue_drivers.databinding.FragmentShippingBinding;
 import com.example.tongue_drivers.viewmodels.DriverViewModel;
+import com.example.tongue_drivers.viewmodels.ShippingConnectionViewModel;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.tasks.OnSuccessListener;
+
 import static android.content.ContentValues.TAG;
+
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
 
 
 public class ShippingFragment extends Fragment {
@@ -32,18 +53,35 @@ public class ShippingFragment extends Fragment {
     private DriverViewModel driverViewModel;
     private Boolean isClicked;
     public ValueAnimator onConnectedValueAnimator;
+    private FusedLocationProviderClient fusedLocationProviderClient;
+    private LocationRequest locationRequest;
+    public static int requestPermission = 170005;
+    private ShippingConnectionViewModel shippingConnectionViewModel;
+    private GoogleMap googleMap;
+    private ShippingMapsFragment mapFragment;
 
     @Override
-    public void onViewCreated(View view,Bundle savedInstanceState) {
+    public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         isClicked = Boolean.FALSE;
     }
 
     public View onCreateView(LayoutInflater inflater,
-                             ViewGroup container, Bundle savedInstanceState){
+                             ViewGroup container, Bundle savedInstanceState) {
 
         binding = FragmentShippingBinding.inflate(inflater, container, false);
+        mapFragment = (ShippingMapsFragment) getChildFragmentManager().findFragmentById(R.id.map);
+        Log.w("TAG", String.valueOf(mapFragment==null));
+
+        Log.w("TAG","OnCreateView");
         driverViewModel = new ViewModelProvider(getActivity()).get(DriverViewModel.class);
+        shippingConnectionViewModel = new ViewModelProvider(this).get(ShippingConnectionViewModel.class);
+        // Permissions
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
+        locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(4000);
+        locationRequest.setFastestInterval(4000);
 
         binding.fragShippingProfileBar.shippingProfileHomeButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -56,26 +94,94 @@ public class ShippingFragment extends Fragment {
 
             @Override
             public void onClick(View view) {
-                if (isClicked){
+                if (shippingConnectionViewModel.isConnected()){
+                    Log.w("TAG","Disconnecting");
                     animateConnectedButton(true);
                     connectedButtonListener.OnConnectedButtonClicked(view);
-                    isClicked = Boolean.FALSE;
+                    shippingConnectionViewModel.connect(Boolean.FALSE,driverViewModel.getDriver().getIdToken());
                     onConnectedValueAnimator.end();
 
                 }else {
+                    Log.w("TAG","Connecting");
                     animateConnectedButton(false);
                     connectedButtonListener.OnConnectedButtonClicked(view);
-                    isClicked = Boolean.TRUE;
+                    shippingConnectionViewModel.connect(Boolean.TRUE,driverViewModel.getDriver().getIdToken());
                     onConnectedValueAnimator.start();
                 }
             }
         });
 
+
+        shippingConnectionViewModel.getStomp().subscribe(new Observer() {
+            @Override
+            public void onSubscribe(@NotNull Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(@NotNull Object o) {
+                // We receive a Shipping object
+                updateUiOnShippingRequested();
+            }
+
+            @Override
+            public void onError(@NotNull Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
         onConnectedValueAnimator = configOnConnectedAnimator();
 
         View root = binding.getRoot();
         return root;
     }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        ShippingMapsFragment mapFragment = (ShippingMapsFragment) getChildFragmentManager().findFragmentById(R.id.fragment_shipping_google);
+        Log.w("TAG2", String.valueOf(mapFragment==null));
+
+        if (ActivityCompat.checkSelfPermission(getActivity(),
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(getActivity(),
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
+            ActivityCompat.requestPermissions(getActivity(), permissions, requestPermission);
+        }
+
+        try {
+            fusedLocationProviderClient.requestLocationUpdates(locationRequest,new LocationCallback(){
+                @Override
+                public void onLocationResult(LocationResult locationResult) {
+                    Location location = locationResult.getLastLocation();
+                    Log.w("LOCATION","Successful retrieval");
+                    if (shippingConnectionViewModel.isConnected()) {
+                        //shippingConnectionViewModel.getStomp().sendLocation(location);
+                        mapFragment.alignCameraOnNextPosition(location);
+                    }
+                }
+            },null);
+        }catch (SecurityException securityException){
+
+        }
+        /*fusedLocationProviderClient.getLastLocation()
+                .addOnSuccessListener(getActivity(), new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+
+
+                    }
+                });
+
+         */
+    }
+
 
     @Override
     public void onAttach(@NonNull @NotNull Context context) {
@@ -95,6 +201,10 @@ public class ShippingFragment extends Fragment {
         onConnectedValueAnimator.cancel();
         onConnectedValueAnimator.end();
         binding = null;
+    }
+
+    private void rotateCameraOnLocationUpdate(){
+
     }
 
     private ValueAnimator configOnConnectedAnimator(){
@@ -117,6 +227,10 @@ public class ShippingFragment extends Fragment {
             }
         });
         return valueAnimator;
+    }
+
+    private void updateUiOnShippingRequested(){
+        binding.slidingUp.callOnClick();
     }
 
 
