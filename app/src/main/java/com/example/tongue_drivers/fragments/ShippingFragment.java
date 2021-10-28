@@ -145,7 +145,6 @@ public class ShippingFragment extends Fragment {
         super.onStart();
 
         ShippingMapsFragment mapFragment = (ShippingMapsFragment) getChildFragmentManager().findFragmentById(R.id.fragment_shipping_google);
-        Log.w("TAG2", String.valueOf(mapFragment==null));
 
         if (ActivityCompat.checkSelfPermission(getActivity(),
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -170,16 +169,6 @@ public class ShippingFragment extends Fragment {
         }catch (SecurityException securityException){
 
         }
-        /*fusedLocationProviderClient.getLastLocation()
-                .addOnSuccessListener(getActivity(), new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-
-
-                    }
-                });
-
-         */
     }
 
 
@@ -203,9 +192,6 @@ public class ShippingFragment extends Fragment {
         binding = null;
     }
 
-    private void rotateCameraOnLocationUpdate(){
-
-    }
 
     private ValueAnimator configOnConnectedAnimator(){
         int blackColor = ContextCompat.getColor(getActivity(), com.example.tongue_drivers.R.color.black);

@@ -13,6 +13,15 @@ public class Driver {
     private String identification;
     private String imageUrl;
     private String email;
+    private String sessionId;
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
 
     public String getId() {
         return idToken;

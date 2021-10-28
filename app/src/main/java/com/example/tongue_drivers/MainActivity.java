@@ -1,6 +1,7 @@
 package com.example.tongue_drivers;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,13 +17,17 @@ import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
+import com.android.volley.ParseError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.tongue_drivers.config.TongueNetworkSettings;
 import com.example.tongue_drivers.databinding.ActivityMainBinding;
 import com.example.tongue_drivers.databinding.FragmentHomeBinding;
 import com.example.tongue_drivers.fragments.HomeFragment;
@@ -30,6 +35,7 @@ import com.example.tongue_drivers.fragments.LoginFragment;
 import com.example.tongue_drivers.fragments.ShippingFragment;
 import com.example.tongue_drivers.models.Driver;
 import com.example.tongue_drivers.viewmodels.DriverViewModel;
+import com.example.tongue_drivers.viewmodels.ShippingConnectionViewModel;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -45,14 +51,18 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.CookieHandler;
+import java.net.CookieManager;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static android.content.ContentValues.TAG;
 
 public class MainActivity extends AppCompatActivity implements LoginFragment.OnLoginButtonListener,
         HomeFragment.OnLogoutButtonListener,
-        ShippingFragment.OnHomeButtonListener {
+        ShippingFragment.OnHomeButtonListener,
+        ShippingFragment.OnConnectedButtonListener{
     
     //Fields
     private ActivityMainBinding binding;
@@ -61,9 +71,11 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
     private NavController navController;
     private GoogleSignInClient googleSignInClient;
     private DriverViewModel driverViewModel;
+    private ShippingConnectionViewModel shippingConnectionViewModel;
     private static final int RC_SIGN_IN = 9001;
     private RequestQueue queue;
-    private static final String loginUrl = "http://localhost/drivers/login";
+    private static final String loginUrl = "http://"+
+            TongueNetworkSettings.domain +":"+TongueNetworkSettings.port+"/drivers/login";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,11 +93,15 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                 .requestEmail()
                 .build();
 
+        CookieHandler.setDefault(new CookieManager());
+
         queue = Volley.newRequestQueue(this);
 
         googleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions);
 
         driverViewModel = new ViewModelProvider(this).get(DriverViewModel.class);
+
+        shippingConnectionViewModel = new ViewModelProvider(this).get(ShippingConnectionViewModel.class);
 
     }
 
@@ -93,6 +109,14 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
     @Override
     protected void onStart() {
         super.onStart();
+        // Testing purposes
+        Driver driver = new Driver();
+        //driver.setId("id");
+        //driver.setRating(4.4);
+        //driver.setName("Alexander");
+        //driverViewModel.setDriver(driver);
+        //navController.navigate(R.id.action_mainFragment_to_shippingFragment);
+        // Enable it on production
         silentSignInTask();
     }
 
@@ -131,6 +155,20 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
         }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull @NotNull String[] permissions, @NonNull @NotNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case 170005:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                        && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    navController.navigate(R.id.action_mainFragment_to_shippingFragment);
+                }else {
+                    // Explain to the user that Location Permissions are mandatory
+                }
+        }
+    }
+
     private void googleSignIn(){
         Intent intent = googleSignInClient.getSignInIntent();
         startActivityForResult(intent, RC_SIGN_IN);
@@ -146,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
             Log.w(TAG,account.getId());
 
             final Driver driver = new Driver();
-            driver.setId(account.getId());
+            driver.setIdToken(account.getIdToken());
 
 
             Uri.Builder builder = Uri.parse(loginUrl).buildUpon();
@@ -223,11 +261,12 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                         builder.appendQueryParameter("idToken", googleSignInAccount.getIdToken());
                         String loginUrl=builder.build().toString();
 
-                        driver.setId(googleSignInAccount.getId());
+                        driver.setIdToken(googleSignInAccount.getIdToken());
                         StringRequest stringRequest = new StringRequest(Request.Method.GET, loginUrl, response -> {
 
                             Driver driver1 = new Driver();
                             driver1 = populateDriverFromStringResponse(response,driver);
+
                             if (driver1!=null){
                                 driverViewModel.setDriver(driver1);
                                 homeBinding.setDriver(driverViewModel);
@@ -249,7 +288,34 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                         })
 
 
+
                         {
+                            @Override
+                            protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                                try {
+                                    String jsonString = new String(response.data,
+                                            HttpHeaderParser.parseCharset(response.headers));
+                                    JSONObject jsonResponse = new JSONObject(jsonString);
+                                    jsonResponse.put("headers", new JSONObject(response.headers));
+                                    String cookie = response.headers.get("Set-Cookie");
+                                    String[] fields = cookie.split(";");
+                                    String[] parts = fields[0].split("=");
+                                    String sessionId = parts[1];
+                                    driver.setSessionId(sessionId);
+                                    Log.w("SESSION",sessionId);
+                                    //int i1 = header.indexOf("sessionId");
+                                    //int i2 = header.indexOf("; path");
+
+                                    //String sessionId = header.substring(i1,i2);
+
+                                    return Response.success(jsonString,HttpHeaderParser.parseCacheHeaders(response));
+
+                                }catch (Exception e){
+                                    Log.w("ERROR","Error parsing network");
+                                    return Response.error(new ParseError(e));
+                                }
+                            }
+
                             @Override
                             protected Map<String, String> getParams(){
                                 Log.w(TAG,"GetParams");
@@ -304,4 +370,8 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
     }
 
 
+    @Override
+    public void OnConnectedButtonClicked(View view) {
+
+    }
 }
