@@ -110,14 +110,18 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
     protected void onStart() {
         super.onStart();
         // Testing purposes
-        Driver driver = new Driver();
-        //driver.setId("id");
-        //driver.setRating(4.4);
-        //driver.setName("Alexander");
-        //driverViewModel.setDriver(driver);
-        //navController.navigate(R.id.action_mainFragment_to_shippingFragment);
-        // Enable it on production
+        //fastLogin();
+        //Enable it on production
         silentSignInTask();
+    }
+
+    private void fastLogin(){
+        Driver driver = new Driver();
+        driver.setId("id");
+        driver.setRating(4.4);
+        driver.setName("Alexander");
+        driverViewModel.setDriver(driver);
+        navController.navigate(R.id.action_mainFragment_to_shippingFragment);
     }
 
     @Override

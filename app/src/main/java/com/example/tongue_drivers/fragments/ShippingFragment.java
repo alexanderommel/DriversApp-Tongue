@@ -23,6 +23,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.tongue_drivers.R;
 import com.example.tongue_drivers.databinding.FragmentShippingBinding;
+import com.example.tongue_drivers.models.NotificationMessage;
 import com.example.tongue_drivers.viewmodels.DriverViewModel;
 import com.example.tongue_drivers.viewmodels.ShippingConnectionViewModel;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -33,6 +34,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
 import static android.content.ContentValues.TAG;
 
@@ -72,6 +74,7 @@ public class ShippingFragment extends Fragment {
         binding = FragmentShippingBinding.inflate(inflater, container, false);
         mapFragment = (ShippingMapsFragment) getChildFragmentManager().findFragmentById(R.id.map);
         Log.w("TAG", String.valueOf(mapFragment==null));
+        binding.slidingContent.requestSection.getRoot().setVisibility(View.GONE);
 
         Log.w("TAG","OnCreateView");
         driverViewModel = new ViewModelProvider(getActivity()).get(DriverViewModel.class);
@@ -121,12 +124,13 @@ public class ShippingFragment extends Fragment {
             @Override
             public void onNext(@NotNull Object o) {
                 // We receive a Shipping object
-                updateUiOnShippingRequested();
+                NotificationMessage notificationMessage = (NotificationMessage) o;
+                updateUiOnShippingRequested(notificationMessage);
             }
 
             @Override
             public void onError(@NotNull Throwable e) {
-
+                Log.w("STOMP ERROR",e.getMessage());
             }
 
             @Override
@@ -215,8 +219,15 @@ public class ShippingFragment extends Fragment {
         return valueAnimator;
     }
 
-    private void updateUiOnShippingRequested(){
-        binding.slidingUp.callOnClick();
+    private void updateUiOnShippingRequested(NotificationMessage notificationMessage){
+        binding.slidingContent.requestSection.getRoot().setVisibility(View.VISIBLE);
+        binding.slidingUp.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED);
+        CharSequence charSequence = notificationMessage.getSender()+" requires you to ship his artifacts.";
+        binding.slidingContent.slidingTitle.setText(charSequence);
+        //binding.slidingUp.callOnClick();
+        binding.slidingUp.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED);
+        //binding.slidingUp.setPanelHeight(binding.slidingContent.header.getHeight()+120);
+
     }
 
 

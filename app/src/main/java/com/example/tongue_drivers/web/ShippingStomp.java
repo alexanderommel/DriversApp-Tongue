@@ -4,8 +4,10 @@ import android.location.Location;
 import android.util.Log;
 
 import com.example.tongue_drivers.config.TongueNetworkSettings;
+import com.example.tongue_drivers.models.NotificationMessage;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,9 +100,11 @@ public class ShippingStomp extends Observable {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(topicMessage -> {
                     Log.w("TAG","Received message from "+driversSubscriptionPath);
+                    String payload = topicMessage.getPayload();
+                    NotificationMessage message = gson.fromJson(payload, NotificationMessage.class);
                     for (Observer ob:observers
                          ) {
-                        ob.onNext(null);
+                        ob.onNext(message);
                     }
                     //Send data to observers
                 }, throwable -> {
