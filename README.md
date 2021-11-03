@@ -6,6 +6,8 @@ Android App thats integrated with Tongue Shipping Service used to provide an int
 
 - Developed on Android
 
+- Single Activity Architecture
+
 - Geolocation
 
 - HTTP Communication
