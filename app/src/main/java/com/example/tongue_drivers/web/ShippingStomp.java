@@ -5,9 +5,13 @@ import android.util.Log;
 
 import com.example.tongue_drivers.config.TongueNetworkSettings;
 import com.example.tongue_drivers.models.NotificationMessage;
+import com.example.tongue_drivers.models.ShippingLocation;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +40,7 @@ public class ShippingStomp extends Observable {
     private final String connectionEndPoint="/connect";
     private final String driversSubscriptionPath="/user/queue/drivers";
     private final String shareLocationEndPoint="/app/drivers/share_location";
+    private final String acceptShippingEndPoint="/app/drivers/accept_shipping";
     private List<Observer> observers;
 
     private ShippingStomp() {
@@ -123,14 +128,36 @@ public class ShippingStomp extends Observable {
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
-    public void sendLocation(Location location,String idToken){
+    public void sendLocation(ShippingLocation location, String idToken){
         if (!stompClient.isConnected()) return;
-        compositeDisposable.add(stompClient.send(shareLocationEndPoint,"Echo")
+        String uri = "ws://"+domain+":"+port+shareLocationEndPoint+"?idToken="+idToken;
+        String locationJson = gson.toJson(location);
+        compositeDisposable.add(stompClient.send(uri,locationJson)
                 .compose(applySchedulers())
                 .subscribe(() -> {
                     Log.w("STOMP","Location Shared successfully");
                 }, throwable -> {
                     Log.w("STOMP","Error sharing location");
+                }));
+    }
+
+    public void acceptShipping(Long shipping_id,
+                               String authorization_token,
+                               String idToken) throws JSONException {
+        if (!stompClient.isConnected()) return;
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("shipping_id",shipping_id);
+        jsonObject.put("authorization_token",authorization_token);
+        String jsonString = jsonObject.toString();
+
+        String uri = "ws://"+domain+":"+port+acceptShippingEndPoint+"?idToken="+idToken;
+        compositeDisposable.add(stompClient.send(uri,jsonString)
+                .compose(applySchedulers())
+                .subscribe(() -> {
+                    Log.w("STOMP","Shipping accepted message successfully");
+                }, throwable -> {
+                    Log.w("STOMP","Error on accepting shipping request");
                 }));
     }
 

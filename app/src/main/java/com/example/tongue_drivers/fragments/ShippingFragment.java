@@ -19,12 +19,15 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.tongue_drivers.R;
 import com.example.tongue_drivers.databinding.FragmentShippingBinding;
 import com.example.tongue_drivers.models.NotificationMessage;
+import com.example.tongue_drivers.models.ShippingLocation;
 import com.example.tongue_drivers.viewmodels.DriverViewModel;
+import com.example.tongue_drivers.viewmodels.NotificationSharedViewModel;
 import com.example.tongue_drivers.viewmodels.ShippingConnectionViewModel;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -39,6 +42,7 @@ import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 import static android.content.ContentValues.TAG;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONException;
 
 import java.util.List;
 
@@ -58,8 +62,8 @@ public class ShippingFragment extends Fragment {
     private FusedLocationProviderClient fusedLocationProviderClient;
     private LocationRequest locationRequest;
     public static int requestPermission = 170005;
+    private NotificationSharedViewModel notificationSharedViewModel;
     private ShippingConnectionViewModel shippingConnectionViewModel;
-    private GoogleMap googleMap;
     private ShippingMapsFragment mapFragment;
 
     @Override
@@ -72,13 +76,18 @@ public class ShippingFragment extends Fragment {
                              ViewGroup container, Bundle savedInstanceState) {
 
         binding = FragmentShippingBinding.inflate(inflater, container, false);
-        mapFragment = (ShippingMapsFragment) getChildFragmentManager().findFragmentById(R.id.map);
+        //mapFragment = (ShippingMapsFragment) getChildFragmentManager().findFragmentById(R.id.map);
+        mapFragment = (ShippingMapsFragment) getChildFragmentManager().findFragmentById(R.id.fragment_shipping_google);
         Log.w("TAG", String.valueOf(mapFragment==null));
         binding.slidingContent.requestSection.getRoot().setVisibility(View.GONE);
 
         Log.w("TAG","OnCreateView");
-        driverViewModel = new ViewModelProvider(getActivity()).get(DriverViewModel.class);
-        shippingConnectionViewModel = new ViewModelProvider(this).get(ShippingConnectionViewModel.class);
+        driverViewModel =
+                new ViewModelProvider(getActivity()).get(DriverViewModel.class);
+        notificationSharedViewModel =
+                new ViewModelProvider(getActivity()).get(NotificationSharedViewModel.class);
+        shippingConnectionViewModel =
+                new ViewModelProvider(this).get(ShippingConnectionViewModel.class);
         // Permissions
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getActivity());
         locationRequest = LocationRequest.create();
@@ -115,6 +124,39 @@ public class ShippingFragment extends Fragment {
         });
 
 
+        binding.slidingContent.requestSection.acceptRequest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                MutableLiveData<NotificationMessage> mutableLiveData =
+                        notificationSharedViewModel.getNotification();
+
+                NotificationMessage noti = mutableLiveData.getValue();
+                if (noti==null)
+                    return;
+                try {
+                    Log.w("ACCEPT BUTTON","Accepting request");
+                    shippingConnectionViewModel.
+                            getStomp().
+                            acceptShipping(noti.getShipping_id(),
+                                    noti.getAuthorization_token(),
+                                    driverViewModel.getDriver().getIdToken());
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Log.w("ACCEPT BUTTON","Error on accepting");
+                }
+            }
+        });
+
+        binding.slidingContent.requestSection.rejectRequest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.w("REJECT BUTTON","Updating ui...");
+                notificationSharedViewModel.setNotification(null);
+                binding.slidingContent.requestSection.getRoot().setVisibility(View.GONE);
+                binding.slidingUp.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+            }
+        });
+
         shippingConnectionViewModel.getStomp().subscribe(new Observer() {
             @Override
             public void onSubscribe(@NotNull Disposable d) {
@@ -125,7 +167,9 @@ public class ShippingFragment extends Fragment {
             public void onNext(@NotNull Object o) {
                 // We receive a Shipping object
                 NotificationMessage notificationMessage = (NotificationMessage) o;
+                notificationSharedViewModel.setNotification(notificationMessage);
                 updateUiOnShippingRequested(notificationMessage);
+                mapFragment.showDestination();
             }
 
             @Override
@@ -148,7 +192,7 @@ public class ShippingFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
-        ShippingMapsFragment mapFragment = (ShippingMapsFragment) getChildFragmentManager().findFragmentById(R.id.fragment_shipping_google);
+        //ShippingMapsFragment mapFragment = (ShippingMapsFragment) getChildFragmentManager().findFragmentById(R.id.fragment_shipping_google);
 
         if (ActivityCompat.checkSelfPermission(getActivity(),
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -163,9 +207,13 @@ public class ShippingFragment extends Fragment {
                 @Override
                 public void onLocationResult(LocationResult locationResult) {
                     Location location = locationResult.getLastLocation();
+                    ShippingLocation shippingLocation = new ShippingLocation();
+                    shippingLocation.setLatitude(String.valueOf(location.getLatitude()));
+                    shippingLocation.setLongitude(String.valueOf(location.getLongitude()));
                     Log.w("LOCATION","Successful retrieval");
                     if (shippingConnectionViewModel.isConnected()) {
-                        //shippingConnectionViewModel.getStomp().sendLocation(location);
+                        shippingConnectionViewModel.getStomp().sendLocation(shippingLocation,
+                                driverViewModel.getDriver().getIdToken());
                         mapFragment.alignCameraOnNextPosition(location);
                     }
                 }

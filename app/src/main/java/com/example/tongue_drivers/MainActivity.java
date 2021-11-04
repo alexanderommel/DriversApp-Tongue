@@ -110,10 +110,14 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
     protected void onStart() {
         super.onStart();
         // Testing purposes
-        //fastLogin();
+        fastLogin();
         //Enable it on production
-        silentSignInTask();
+        if (!driverViewModel.getAuthenticated()){
+            //silentSignInTask();
+        }
+
     }
+
 
     private void fastLogin(){
         Driver driver = new Driver();
@@ -121,7 +125,11 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
         driver.setRating(4.4);
         driver.setName("Alexander");
         driverViewModel.setDriver(driver);
-        navController.navigate(R.id.action_mainFragment_to_shippingFragment);
+        if (!driverViewModel.getAuthenticated()){
+            driverViewModel.setAuthenticated(true);
+            navController.navigate(R.id.action_mainFragment_to_shippingFragment);
+        }
+
     }
 
     @Override
@@ -200,11 +208,13 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
                 driver1 = populateDriverFromStringResponse(response,driver);
                 if (driver1!=null){
                     driverViewModel.setDriver(driver1);
+                    driverViewModel.setAuthenticated(true);
                     homeBinding.setDriver(driverViewModel);
                     Log.w(TAG,"Navigate from LoginFragment to ShippingFragment");
                     navController.navigate(R.id.action_loginFragment_to_shippingFragment);
                 }else {
                     googleSignInClient.signOut();
+                    driverViewModel.setAuthenticated(false);
                     driverViewModel.setDriver(null);
                     Log.w(TAG,"Parsing failed");
                 }
@@ -212,6 +222,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
             }, error -> {
                 googleSignInClient.signOut();
                 driverViewModel.setDriver(null);
+                driverViewModel.setAuthenticated(false);
                 Log.w(TAG,"String request failed");
                 Log.w(TAG,error.toString());
                 //Log.w(TAG,"Error "+error.networkResponse.statusCode);
@@ -273,6 +284,7 @@ public class MainActivity extends AppCompatActivity implements LoginFragment.OnL
 
                             if (driver1!=null){
                                 driverViewModel.setDriver(driver1);
+                                driverViewModel.setAuthenticated(true);
                                 homeBinding.setDriver(driverViewModel);
                                 Log.w(TAG,"Navigate from MainFragment to ShippingFragment");
                                 navController.navigate(R.id.action_mainFragment_to_shippingFragment);

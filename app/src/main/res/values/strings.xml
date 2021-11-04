@@ -14,4 +14,8 @@
     <string name="TongueDrivers">Tongue Drivers</string>
     <string name="server_client_id">319232536194-754v9d4i0hpfugk92qe8o0g3am7qj5q3.apps.googleusercontent.com</string>
     <string name="shipping_section_title">Searching...</string>
+    <string name="accounting">Cobros</string>
+    <string name="travels">Viajes</string>
+    <string name="statistics">Estadísticas</string>
+    <string name="profile">Perfil</string>
 </resources>
